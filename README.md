@@ -1,6 +1,5 @@
 # react_express_mongodb_demo
-`采用React + Node.js + Express + mongoskin + MongoDB技术开发的一个示例`，演示地址在这里：
-[http://zidafone.com:3000/](http://zidafone.com:3000/)
+`采用React + Node.js + Express + mongoskin + MongoDB技术开发的一个示例`
 
 ##源码使用方法：
 
@@ -58,6 +57,5 @@ node app.js
 
 ##联系我：
 
-* 新浪微博@冷镜
-* 个人博客[http://blog.427studio.net](http://blog.427studio.net)
+* yyl
 * QQ 908789432
