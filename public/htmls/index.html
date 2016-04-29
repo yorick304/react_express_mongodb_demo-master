@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <style>
+      .ok{
+        color : white;
+        background-color : green;
+      }
+      .not-ok{
+        color : white;
+        background-color : red;
+      }
+    </style>
+    <script src="http://cdn.bootcss.com/react/0.14.2/react.js"></script>
+    <script src="http://cdn.bootcss.com/react/0.14.2/react-dom.min.js"></script>
+    <!-- bootcdn没提供browser.min.js，为啥？ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.min.js"></script>
+    
+    <script src="http://cdn.bootcss.com/jquery/3.0.0-alpha1/jquery.min.js"></script>
+    
+    <script src="http://cdn.bootcss.com/socket.io/1.3.7/socket.io.min.js"></script>
+  </head>
+  <body>
+  	姓名：<input type="text" id="name"/>
+  	<input type="button" id="name_btn" value="添加玩家"/>
+  	<br>
+  	日期：<input type="text" id="date"/>
+  	<input type="button" id="date_btn" value="添加日期"/>
+  	
+    <div id="example"></div>
+    <script>
+      //业务数据。dates表示日期，persons表示人
+      //可以把dates看做列定义，把persons看做每行数据
+      var data = null;
+	  var myTable;
+      
+      function setDataToDb(){
+      	var d = myTable.state;
+      	var str = JSON.stringify(d);
+      	$.post("/api/setData", {
+      		str : str
+      	}, function(result){
+      		console.log(result.msg);
+      	});
+      }
+      
+      var socket = io.connect();
+      socket.on("change", function(d){
+		myTable.setState(d);
+      });
+    </script>
+    <script type="text/babel">
+      //定义组件
+      var MyTable = React.createClass({
+        //获得初始状态，后面可以用this.state获得该状态，当用this.setState(xx)更新状态时会自动重绘
+        getInitialState : function(){
+          var dataVar = this.props.dataVar;//访问组件参数
+          var d = window[dataVar];
+          return d;
+        },
+        //渲染策略
+        render : function(){
+          var that = this;//方便下面的代码中访问当前MyTable对象
+          return (
+            <table>
+              <tbody>
+              <tr>
+                <th></th>
+                {
+                  that.state.dates.map(function(d){
+                    return <th key={d.name}>{d.name}</th>
+                  })
+                }
+              </tr>
+              {
+                //trs begin
+                that.state.persons.map(function(p){
+                  return (
+                    <tr>
+                      <th>{p.name}</th>
+                      {
+                        that.state.dates.map(function(d){
+                          return React.createElement(//用createElement返回需要稍微复杂点的html标签，参数依次为标签名、标签参数、标签内容
+                            'td', 
+                            {
+                              key : p.name + "_" + d.name,
+                              className : p.oks[d.name] ? "ok" : "not-ok",
+                              onClick : function(){
+                                p.oks[d.name] = !p.oks[d.name];//点击的时候改变状态
+                                that.setState(that.state);//触发重绘本MyTable控件
+                                setDataToDb();
+                              }
+                            }, 
+                            p.oks[d.name] ? "√" : "×"
+                          );
+                        })
+                      }
+                    </tr>
+                  )
+                })
+                //trs end
+              }
+              </tbody>
+            </table>
+          );//return end
+        }
+      });
+
+	  $.get("/api", function(d){
+	      data = d;
+	      myTable = ReactDOM.render(
+	        <MyTable dataVar="data"/>,
+	        document.getElementById('example')
+	      );
+	  });
+
+	  $(function(){
+	  	$("#name_btn").click(function(){
+	  		var name = $("#name").val();
+	  		if(name){
+		  		myTable.state.persons.push({
+		  			name : name,
+		  			oks : {}
+		  		});
+		  		myTable.setState(myTable.state);
+		  		setDataToDb();
+	  		}else{
+	  			alert("请输入姓名！");
+	  		}
+	  	});
+	  	
+	  	$("#date_btn").click(function(){
+	  		var date = $("#date").val();
+	  		if(date){
+		  		myTable.state.dates.push({
+		  			name : date
+		  		});
+		  		myTable.setState(myTable.state);
+		  		setDataToDb();
+	  		}else{
+	  			alert("请输入日期！");
+	  		}
+	  	});
+	  });
+    </script>
+  </body>
+</html>
